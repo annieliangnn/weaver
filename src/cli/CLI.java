@@ -110,7 +110,6 @@ public class CLI {
         System.out.println("  Start:  " + model.getStartWord());
         System.out.println("  Target: " + model.getTargetWord());
     }
-
     /**
      * Handle a word guess:
      *  - Validate length
