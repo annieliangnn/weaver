@@ -136,7 +136,7 @@ public class CLI {
         if (!model.isValidWord(guess)) {
             // If error messaging enabled, print the model's error message
             String err = model.getErrorMessage();
-            System.out.println(err != null ? err : "Word not in dictionary.");
+            System.out.println(err != null ? err : "Word not in dictionary!");
             return;
         }
 
