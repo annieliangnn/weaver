@@ -7,6 +7,7 @@ public class GUIController {
     private Model model;
     private GUIView view;
 
+
     public GUIController(Model model, GUIView view) {
         this.model = model;
         this.view = view;
@@ -14,7 +15,7 @@ public class GUIController {
 
     public void initGame() {
         model.loadDictionary();
-        model.setStartAndTargetWords("soul", "mate");
+        model.setStartAndTargetWords("care", "card");
         view.setVisible(true);
     }
 }

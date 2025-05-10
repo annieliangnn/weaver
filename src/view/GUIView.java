@@ -341,6 +341,7 @@ public class GUIView extends JFrame implements java.util.Observer {
         gamePanel.add(wordPanel);
     }
 
+
     public static void main(String[] args) {
         Model model = new Model();
         SwingUtilities.invokeLater(() -> {

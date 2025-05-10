@@ -62,7 +62,7 @@ class ModelTest {
         model.setStartAndTargetWords("test", "word");
         model.setShowErrorFlag(true);
         model.updateCurrentInput("abcd");
-        assertEquals("无效的单词！", model.getErrorMessage());
+        assertEquals("Invalid Word!", model.getErrorMessage());
     }
 
     @Test
