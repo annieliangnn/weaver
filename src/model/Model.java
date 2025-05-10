@@ -124,10 +124,6 @@ public class Model extends Observable {
         return currentInput;
     }
 
-    public GameState getGameState() {
-        return gameState;
-    }
-
     public void setShowErrorFlag(boolean showErrorFlag) {
         this.showErrorFlag = showErrorFlag;
     }
