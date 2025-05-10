@@ -164,6 +164,7 @@ public class CLI {
         System.out.println("History: " + history);
     }
 
+
     public static void main(String[] args) {
         Model model = new Model();
         CLI cli   = new CLI(model);
