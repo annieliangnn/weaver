@@ -2,12 +2,10 @@ package model;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Observable;
+import java.util.*;
 
 public class Model extends Observable {
+    private static List<String> list;
     private List<String> dictionary;
     private String startWord;
     private String targetWord;
@@ -148,4 +146,5 @@ public class Model extends Observable {
     public List<String> getDictionary() {
         return dictionary;
     }
+
 }
