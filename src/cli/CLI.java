@@ -132,6 +132,7 @@ public class CLI {
             return;
         }
 
+
         // Check dictionary membership
         if (!model.isValidWord(guess)) {
             // If error messaging enabled, print the model's error message
