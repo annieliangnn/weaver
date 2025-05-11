@@ -5,25 +5,16 @@ import model.Model;
 import java.util.List;
 import java.util.Scanner;
 
-/**
- * Command-Line Interface (CLI) for the Weaver game.
- *
- * Features:
- *  - “new” / “newgame” to start a fresh game
- *  - “reset” to undo the last guess
- *  - “error on/off” to toggle invalid-word prompts
- *  - “path on/off” to toggle showing the [start → target] path
- *  - “quit” / “exit” to end the program
- *  - Validates guesses against the dictionary
- *  - Displays start/target on new game and full history after each guess
- */
 public class CLI {
-    private final Model model;
-    private final Scanner scanner;
-
+    private Model model;
+    private boolean showErrorsFlag = true;
+    private boolean showSolutionPathFlag = true;
+    private boolean randomGameFlag = true;
     public CLI(Model model) {
         this.model   = model;
-        this.scanner = new Scanner(System.in);
+        model.setShowErrorFlag(showErrorsFlag);
+        model.setShowPathFlag(showSolutionPathFlag);
+        model.setRandomWordFlag(randomGameFlag);
     }
 
     /**
@@ -31,138 +22,112 @@ public class CLI {
      */
     public void start() {
         System.out.println("Welcome to Weaver (CLI)!");
-        printHelp();
+        model.loadDictionary();
 
+
+        Scanner scanner = new Scanner(System.in);
         boolean running = true;
+
         while (running) {
-            System.out.print("> ");
-            String line = scanner.nextLine().trim();
-            String cmd  = line.toLowerCase();
+            // Clear history at the start of each round
+            model.resetGame();
+            model.setRandomWordFlag(randomGameFlag);
+            model.setStartAndTargetWords(null, null);  // pick new random (or fixed) words
 
-            switch (cmd) {
-                case "help":
-                    printHelp();
-                    break;
+            System.out.println("Game started. Start Word: " + model.getStartWord() + ", Target Word: " + model.getTargetWord());
+            System.out.println("Flags: [Show Errors: " + showErrorsFlag + "] [Show Solution Path: " + showSolutionPathFlag + "] [Random Game: " + randomGameFlag + "]");
+            // Show solution path at the start
+            if (showSolutionPathFlag) {
+                List<String> path = model.getSolutionPath();
+                if (path != null) {
+                    System.out.println("Solution Path: " + String.join(" → ", path));
+                } else {
+                    System.out.println("No valid path found!");
+                }
+            }
 
-                case "new":
-                case "newgame":
-                    startNewGame();
-                    break;
+            boolean roundOver = false;
+            while (!roundOver) {
+                System.out.print("Enter a word or 'reset' to reset the last input: ");
+                String input = scanner.nextLine();
 
-                case "reset":
-                    model.removeLastInput();
-                    System.out.println("Last guess removed.");
-                    printHistory();
-                    break;
+                if (input.equalsIgnoreCase("reset")) {
+                    model.resetGame();
+                    System.out.println("All input cleared.");
+                    if (showSolutionPathFlag) {
+                        List<String> path = model.getSolutionPath();
+                        if (path != null) {
+                            System.out.println("Solution Path: " + String.join(" → ", path));
+                        } else {
+                            System.out.println("No valid path found!");
+                        }
+                    }
+                    continue;
+                }
 
-                case "error on":
-                    model.setShowErrorFlag(true);
-                    System.out.println("Invalid-word prompts: ON");
-                    break;
-                case "error off":
-                    model.setShowErrorFlag(false);
-                    System.out.println("Invalid-word prompts: OFF");
-                    break;
+                if (!model.isValidWord(input)) {
+                    if (showErrorsFlag) {
+                        System.out.println("Invalid word!");
+                    }
+                    if (showSolutionPathFlag) {
+                        List<String> path = model.getSolutionPath();
+                        if (path != null) {
+                            System.out.println("Solution Path: " + String.join(" → ", path));
+                        } else {
+                            System.out.println("No valid path found!");
+                        }
+                    }
+                    continue;
+                }
 
-                case "path on":
-                    model.setShowPathFlag(true);
-                    System.out.println("Path display: ON");
-                    break;
-                case "path off":
-                    model.setShowPathFlag(false);
-                    System.out.println("Path display: OFF");
-                    break;
+                String lastWord = model.getHistoryWords().isEmpty() ? model.getStartWord() : model.getHistoryWords().get(model.getHistoryWords().size() - 1);
+                int diff = model.countLetterDifferences(input, lastWord);
+                if (diff > 1) {
+                    if (showErrorsFlag) {
+                        System.out.println("You can only change one letter at a time!");
+                    }
+                    if (showSolutionPathFlag) {
+                        List<String> path = model.getSolutionPath();
+                        if (path != null) {
+                            System.out.println("Solution Path: " + String.join(" → ", path));
+                        } else {
+                            System.out.println("No valid path found!");
+                        }
+                    }
+                    continue;
+                }
 
-                case "quit":
-                case "exit":
-                    running = false;
-                    break;
+                model.updateCurrentInput(input);
 
-                default:
-                    // Treat anything else as a guess
-                    handleGuess(line);
+                List<String> historyWords = model.getHistoryWords();
+                System.out.println("History: " + historyWords);
+
+                if (showSolutionPathFlag) {
+                    List<String> path = model.getSolutionPath();
+                    if (path != null) {
+                        System.out.println("Solution Path: " + String.join(" → ", path));
+                    } else {
+                        System.out.println("No valid path found!");
+                    }
+                }
+
+                if (input.equalsIgnoreCase(model.getTargetWord())) {
+                    System.out.println("You win!");
+                    // 询问是否进行新一轮游戏
+                    System.out.print("Start a new game? (y/n): ");
+                    String yn = scanner.nextLine().trim().toLowerCase();
+                    if (yn.equals("y")) {
+                        roundOver = true; // 跳出当前回合，进入下一轮
+                    } else {
+                        running = false; // 结束外层循环，退出程序
+                        roundOver = true;
+                    }
+                }
             }
         }
-
-        System.out.println("Goodbye!");
         scanner.close();
     }
 
-    /** Print available commands. */
-    private void printHelp() {
-        System.out.println("Commands:");
-        System.out.println("  new/newgame    Start a new game");
-        System.out.println("  reset          Remove last guess");
-        System.out.println("  error on/off   Toggle invalid-word prompts");
-        System.out.println("  path on/off    Toggle showing [start → target] path");
-        System.out.println("  help           Show this help message");
-        System.out.println("  quit/exit      Exit the program");
-        System.out.println("Or just type a 4-letter word to guess.");
-    }
-
-    /** Initialize or reset start/target and clear history. */
-    private void startNewGame() {
-        model.loadDictionary();
-        model.setRandomWordFlag(true);
-        model.setStartAndTargetWords(null, null);
-        model.resetGame();
-        System.out.println("New game started!");
-        System.out.println("  Start:  " + model.getStartWord());
-        System.out.println("  Target: " + model.getTargetWord());
-    }
-    /**
-     * Handle a word guess:
-     *  - Validate length
-     *  - Check dictionary membership
-     *  - Update model and display history
-     *  - Show path or victory if applicable
-     */
-    private void handleGuess(String guess) {
-        // Ensure a game is started
-        String start = model.getStartWord();
-        if (start == null) {
-            System.out.println("Please start a game first with 'new'.");
-            return;
-        }
-
-        // Enforce correct length
-        if (guess.length() != start.length()) {
-            System.out.println("Please enter a " + start.length() + "-letter word.");
-            return;
-        }
-
-
-        // Check dictionary membership
-        if (!model.isValidWord(guess)) {
-            // If error messaging enabled, print the model's error message
-            String err = model.getErrorMessage();
-            System.out.println(err != null ? err : "Word not in dictionary!");
-            return;
-        }
-
-        // Valid guess: update model
-        model.updateCurrentInput(guess);
-
-        // Optionally print path
-        List<String> path = model.getPath();
-        if (path != null) {
-            System.out.println("Path: " + path);
-        }
-
-        // Print history after update
-        printHistory();
-
-        // Check for win
-        if (model.checkWin()) {
-            System.out.println("Congratulations! You reached the target!");
-        }
-    }
-
-    /** Display the full guess history. */
-    private void printHistory() {
-        List<String> history = model.getHistoryWords();
-        System.out.println("History: " + history);
-    }
 
 
     public static void main(String[] args) {

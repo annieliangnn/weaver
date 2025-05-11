@@ -21,6 +21,12 @@ public class GUIView extends JFrame implements java.util.Observer {
     private JLabel startWordLabel;
     private JLabel targetWordLabel;
     private JPanel keyboardPanel;
+    private JCheckBox showErrorsCheckBox;
+    private JCheckBox showSolutionPathCheckBox;
+    private JCheckBox randomGameCheckBox;
+    private boolean showErrorsFlag = true;
+    private boolean showSolutionPathFlag = true;
+    private boolean randomGameFlag = false;
 
     public GUIView(Model model) {
         this.model = model;
