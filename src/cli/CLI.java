@@ -17,9 +17,6 @@ public class CLI {
         model.setRandomWordFlag(randomGameFlag);
     }
 
-    /**
-     * Main loop: reads commands and guesses, updates the Model, and displays feedback.
-     */
     public void start() {
         System.out.println("Welcome to Weaver (CLI)!");
         model.loadDictionary();
