@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.List;
+import java.util.Scanner;
 
 public class GUIView extends JFrame implements java.util.Observer {
     private Model model;
@@ -47,71 +48,27 @@ public class GUIView extends JFrame implements java.util.Observer {
         //Bottom combination panel
         JPanel southPanel = createSouthPanel();
 
+        // Checkbox panel
+        JPanel checkboxPanel = createCheckboxPanel();
+
         // layout management
         add(infoPanel, BorderLayout.NORTH);
         add(new JScrollPane(gamePanel), BorderLayout.CENTER);
+        add(checkboxPanel, BorderLayout.EAST);
         add(southPanel, BorderLayout.SOUTH);
 
         // Initialize the input panel
         clearInputPanel();
-        setupKeyBindings();
+        //setupKeyBindings();
+        // Key: manually refresh the interface once
+        update(model, new Object[]{
+                model.getGameState(),
+                model.getStartWord(),
+                model.getTargetWord(),
+                model.getHistoryWords(),
+                null
+        });
     }
-        /**
-         * Use Swing Key Bindings to handle keyboard input when any child component gains focus
-         */
-        private void setupKeyBindings() {
-            JComponent root = (JComponent) getContentPane();
-            InputMap im = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-            ActionMap am = root.getActionMap();
-
-            // Bind the A-Z keys
-            for (char c = 'A'; c <= 'Z'; c++) {
-                String key = String.valueOf(c);
-                im.put(KeyStroke.getKeyStroke(c), "letter_" + key);
-                am.put("letter_" + key, new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        addLetterToInput(key.toLowerCase());
-                    }
-                });
-            }
-            //  Bind the a-z keys
-            for (char c = 'a'; c <= 'z'; c++) {
-                String key = String.valueOf(c);
-                im.put(KeyStroke.getKeyStroke(c), "letter_" + key.toUpperCase());
-                am.put("letter_" + key.toUpperCase(), new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        addLetterToInput(key);
-                    }
-                });
-            }
-            // Press Enter to submit
-            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submitInput");
-            am.put("submitInput", new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    submitCurrentInput();
-                }
-            });
-        }
-
-        private void submitCurrentInput() {
-            StringBuilder inputWord = new StringBuilder();
-            for (Component comp : inputPanel.getComponents()) {
-                JTextField field = (JTextField) comp;
-                inputWord.append(field.getText());
-            }
-            if (inputWord.length() == 4) {
-                model.updateCurrentInput(inputWord.toString());
-                if (model.checkWin()) {
-                    JOptionPane.showMessageDialog(this, "Congratulations! You Win!", "Victory",
-                            JOptionPane.INFORMATION_MESSAGE);
-                }
-                clearInputPanel();
-                model.updateCurrentInput(null);
-            }
-        }
 
     private JPanel createInfoPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
@@ -144,13 +101,13 @@ public class GUIView extends JFrame implements java.util.Observer {
         panel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
         panel.setBackground(new Color(200, 200, 200));
 
-        // 按钮面板
+        // Button panel
         JPanel buttonPanel = createButtonPanel();
 
-        // 输入面板
+        // Input panel
         inputPanel = createInputPanel();
 
-        // 键盘面板
+        // Keyboard panel
         keyboardPanel = createKeyboardPanel();
 
         panel.add(buttonPanel, BorderLayout.NORTH);
@@ -165,6 +122,7 @@ public class GUIView extends JFrame implements java.util.Observer {
 
         resetButton = createStyledButton("Reset", new Color(246, 252, 150));
         newGameButton = createStyledButton("New Game", new Color(140, 196, 106));
+        newGameButton.setEnabled(false); // Initially disabled
 
         resetButton.addActionListener(e -> {
             model.removeLastInput();
@@ -172,8 +130,9 @@ public class GUIView extends JFrame implements java.util.Observer {
         });
 
         newGameButton.addActionListener(e -> {
-            model.setRandomWordFlag(true);
-            model.setStartAndTargetWords(null, null);
+            model.setRandomWordFlag(true); // Set random flag
+            model.setStartAndTargetWords(null, null); // Trigger random selection
+            model.setRandomWordFlag(false); // Reset flag
             model.updateCurrentInput(null);
             model.resetGame();
             clearInputPanel();
@@ -225,6 +184,32 @@ public class GUIView extends JFrame implements java.util.Observer {
             }
             panel.add(rowPanel);
         }
+        // New DEL button
+        JPanel delPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
+        delPanel.setBackground(new Color(30, 30, 36));
+        JButton delButton = new JButton("DEL");
+        delButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        delButton.setPreferredSize(new Dimension(60, 50));
+        delButton.setFocusPainted(false);
+        delButton.setBackground(new Color(255, 102, 102));
+        delButton.setForeground(Color.WHITE);
+        delButton.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createRaisedBevelBorder(),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        delButton.addActionListener(e -> {
+            // Delete the last non-empty letter from the input field
+            for (int i = inputPanel.getComponentCount() - 1; i >= 0; i--) {
+                JTextField field = (JTextField) inputPanel.getComponent(i);
+                if (!field.getText().isEmpty()) {
+                    field.setText("");
+                    break;
+                }
+            }
+        });
+        delPanel.add(delButton);
+        panel.add(delPanel);
+
         return panel;
     }
 
@@ -295,9 +280,15 @@ public class GUIView extends JFrame implements java.util.Observer {
             String startWord = (String) state[1];
             String targetWord = (String) state[2];
             List<String> historyWords = (List<String>) state[3];
+            String errorMessage = state.length > 4 ? (String) state[4] : null;
+
+            if (errorMessage != null) {
+                JOptionPane.showMessageDialog(this, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             startWordLabel.setText("Start Word: " + startWord.toUpperCase());
-            targetWordLabel.setText("End Word: " + targetWord.toUpperCase());
+            targetWordLabel.setText("Target Word: " + targetWord.toUpperCase());
 
             gamePanel.removeAll();
             for (String word : historyWords) {
@@ -331,23 +322,78 @@ public class GUIView extends JFrame implements java.util.Observer {
             char c = word.charAt(i);
             char targetChar = targetWord.charAt(i);
 
-            if (c == targetChar) {
-                field.setBackground(new Color(119, 239, 119)); // Correct position color
-            } else if (targetWord.indexOf(c) != -1) {
-                field.setBackground(new Color(248, 248, 89)); // It exists but is in the wrong position
+            if (showErrorsCheckBox.isSelected()) {
+                if (c == targetChar) {
+                    field.setBackground(new Color(144, 238, 144)); // Correct position color
+                } else if (targetWord.indexOf(c) != -1) {
+                    field.setBackground(new Color(255, 255, 153)); // Wrong position color
+                } else {
+                    field.setBackground(new Color(211, 211, 211)); // Letter not in word
+                }
             } else {
-                field.setBackground(new Color(211, 211, 211)); //  no letter exists.
+                field.setBackground(Color.WHITE); // White background when not showing errors
             }
 
             field.setText(String.valueOf(c));
-
             wordPanel.add(field);
         }
 
         gamePanel.add(wordPanel);
     }
 
+    private JPanel createCheckboxPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(new Color(30, 30, 36));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        showErrorsCheckBox = new JCheckBox("Show Errors");
+        showErrorsCheckBox.setSelected(true);
+        showErrorsCheckBox.setForeground(Color.WHITE);
+        showErrorsCheckBox.setBackground(new Color(30, 30, 36));
+        showErrorsCheckBox.addActionListener(e -> {
+            showErrorsFlag = showErrorsCheckBox.isSelected();
+            model.setShowErrorFlag(showErrorsFlag);
+            update(model, new Object[]{
+                    model.getGameState(),
+                    model.getStartWord(),
+                    model.getTargetWord(),
+                    model.getHistoryWords(),
+                    null
+            });
+        });
+
+        showSolutionPathCheckBox = new JCheckBox("Show Solution Path");
+        showSolutionPathCheckBox.setSelected(true);
+        showSolutionPathCheckBox.setForeground(Color.WHITE);
+        showSolutionPathCheckBox.setBackground(new Color(30, 30, 36));
+        showSolutionPathCheckBox.addActionListener(e -> {
+            showSolutionPathFlag = showSolutionPathCheckBox.isSelected();
+            model.setShowPathFlag(showSolutionPathFlag);
+            if (showSolutionPathFlag) {
+                List<String> path = model.getSolutionPath();
+                if (path != null) {
+                    JOptionPane.showMessageDialog(this, "Path: " + String.join(" → ", path), "Hint", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "No valid path found!", "Hint", JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+        });
+
+        randomGameCheckBox = new JCheckBox("Random Game");
+        randomGameCheckBox.setSelected(false);
+        randomGameCheckBox.setForeground(Color.WHITE);
+        randomGameCheckBox.setBackground(new Color(30, 30, 36));
+        randomGameCheckBox.addActionListener(e -> {
+            randomGameFlag = randomGameCheckBox.isSelected();
+            newGameButton.setEnabled(randomGameFlag);
+        });
+
+        panel.add(showErrorsCheckBox);
+        panel.add(showSolutionPathCheckBox);
+        panel.add(randomGameCheckBox);
+        return panel;
+    }
     public static void main(String[] args) {
         Model model = new Model();
         SwingUtilities.invokeLater(() -> {

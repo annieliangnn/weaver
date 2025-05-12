@@ -160,6 +160,9 @@ public class Model extends Observable {
     public String getTargetWord() {
         return targetWord;
     }
+    public GameState getGameState() {
+        return gameState;
+    }
 
     public String getCurrentInput() {
         return currentInput;
