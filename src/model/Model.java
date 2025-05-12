@@ -163,24 +163,6 @@ public class Model extends Observable {
         return false;
     }
 
-    public String getErrorMessage() {
-        if (showErrorFlag && currentInput != null && !isValidWord(currentInput)) {
-            return "Invalid Word！";
-        }
-        return null;
-    }
-    /**
-     * Provides the two-word path if path display is enabled.
-     */
-    public List<String> getPath() {
-        if (showPathFlag) {
-            List<String> path = new ArrayList<>();
-            path.add(startWord);
-            path.add(targetWord);
-            return path;
-        }
-        return null;
-    }
 
     public String getStartWord() {
         return startWord;
