@@ -6,12 +6,7 @@ import model.Model.GameState;
 import javax.swing.*;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.util.List;
-import java.util.Scanner;
 
 public class GUIView extends JFrame implements java.util.Observer {
     private Model model;
@@ -34,9 +29,8 @@ public class GUIView extends JFrame implements java.util.Observer {
         model.addObserver(this);
 
         setTitle("Weaver Game");
-        setSize(700, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        getContentPane().setBackground(new Color(255, 255, 255, 255)); // 深蓝灰色背景
+        getContentPane().setBackground(Color.WHITE);
         setLayout(new BorderLayout(10, 10));
 
         // Information Panel
@@ -45,22 +39,25 @@ public class GUIView extends JFrame implements java.util.Observer {
         // Game History Panel
         gamePanel = createGamePanel();
 
-        //Bottom combination panel
-        JPanel southPanel = createSouthPanel();
+        // Scroll pane for history with fixed size
+        JScrollPane scrollPane = new JScrollPane(gamePanel);
+        scrollPane.setPreferredSize(new Dimension(700, 400));
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         // Checkbox panel
         JPanel checkboxPanel = createCheckboxPanel();
 
-        // layout management
+        // Bottom combination panel
+        JPanel southPanel = createSouthPanel();
+
+        // Layout management
         add(infoPanel, BorderLayout.NORTH);
-        add(new JScrollPane(gamePanel), BorderLayout.CENTER);
+        add(scrollPane, BorderLayout.CENTER);
         add(checkboxPanel, BorderLayout.EAST);
         add(southPanel, BorderLayout.SOUTH);
 
-        // Initialize the input panel
+        // Initialize input and update display
         clearInputPanel();
-        //setupKeyBindings();
-        // Key: manually refresh the interface once
         update(model, new Object[]{
                 model.getGameState(),
                 model.getStartWord(),
@@ -68,6 +65,10 @@ public class GUIView extends JFrame implements java.util.Observer {
                 model.getHistoryWords(),
                 null
         });
+
+        // Pack to respect preferred sizes
+        pack();
+        setLocationRelativeTo(null);
     }
 
     private JPanel createInfoPanel() {
@@ -79,9 +80,9 @@ public class GUIView extends JFrame implements java.util.Observer {
         Font labelFont = new Font("Segoe UI", Font.BOLD, 18);
 
         startWordLabel.setFont(labelFont);
-        startWordLabel.setForeground(new Color(255, 255, 255));
+        startWordLabel.setForeground(Color.WHITE);
         targetWordLabel.setFont(labelFont);
-        targetWordLabel.setForeground(new Color(255, 255, 255));
+        targetWordLabel.setForeground(Color.WHITE);
 
         panel.add(startWordLabel);
         panel.add(targetWordLabel);
@@ -104,11 +105,13 @@ public class GUIView extends JFrame implements java.util.Observer {
         // Button panel
         JPanel buttonPanel = createButtonPanel();
 
-        // Input panel
+        // Input panel with fixed height
         inputPanel = createInputPanel();
+        inputPanel.setPreferredSize(new Dimension(700, 80));
 
-        // Keyboard panel
+        // Keyboard panel with fixed height
         keyboardPanel = createKeyboardPanel();
+        keyboardPanel.setPreferredSize(new Dimension(700, 200));
 
         panel.add(buttonPanel, BorderLayout.NORTH);
         panel.add(inputPanel, BorderLayout.CENTER);
@@ -122,7 +125,7 @@ public class GUIView extends JFrame implements java.util.Observer {
 
         resetButton = createStyledButton("Reset", new Color(246, 252, 150));
         newGameButton = createStyledButton("New Game", new Color(140, 196, 106));
-        newGameButton.setEnabled(false); // Initially disabled
+        newGameButton.setEnabled(false);
 
         resetButton.addActionListener(e -> {
             model.removeLastInput();
@@ -130,10 +133,9 @@ public class GUIView extends JFrame implements java.util.Observer {
         });
 
         newGameButton.addActionListener(e -> {
-            model.setRandomWordFlag(true); // Set random flag
-            model.setStartAndTargetWords(null, null); // Trigger random selection
-            model.setRandomWordFlag(false); // Reset flag
-            model.updateCurrentInput(null);
+            model.setRandomWordFlag(true);
+            model.setStartAndTargetWords(null, null);
+            model.setRandomWordFlag(false);
             model.resetGame();
             clearInputPanel();
         });
@@ -169,22 +171,21 @@ public class GUIView extends JFrame implements java.util.Observer {
         panel.setBackground(new Color(64, 64, 64));
 
         String[][] keyboardRows = {
-                {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"},
-                {"A", "S", "D", "F", "G", "H", "J", "K", "L"},
-                {"Z", "X", "C", "V", "B", "N", "M"}
+                {"Q","W","E","R","T","Y","U","I","O","P"},
+                {"A","S","D","F","G","H","J","K","L"},
+                {"Z","X","C","V","B","N","M"}
         };
-
         for (String[] row : keyboardRows) {
             JPanel rowPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
             rowPanel.setBackground(new Color(30, 30, 36));
-
             for (String key : row) {
                 JButton button = createKeyButton(key);
                 rowPanel.add(button);
             }
             panel.add(rowPanel);
         }
-        // New DEL button
+
+        // Delete key
         JPanel delPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 3));
         delPanel.setBackground(new Color(30, 30, 36));
         JButton delButton = new JButton("DEL");
@@ -195,10 +196,9 @@ public class GUIView extends JFrame implements java.util.Observer {
         delButton.setForeground(Color.WHITE);
         delButton.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createRaisedBevelBorder(),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                BorderFactory.createEmptyBorder(5,5,5,5)
         ));
         delButton.addActionListener(e -> {
-            // Delete the last non-empty letter from the input field
             for (int i = inputPanel.getComponentCount() - 1; i >= 0; i--) {
                 JTextField field = (JTextField) inputPanel.getComponent(i);
                 if (!field.getText().isEmpty()) {
@@ -209,7 +209,6 @@ public class GUIView extends JFrame implements java.util.Observer {
         });
         delPanel.add(delButton);
         panel.add(delPanel);
-
         return panel;
     }
 
@@ -222,13 +221,14 @@ public class GUIView extends JFrame implements java.util.Observer {
         button.setForeground(new Color(30, 30, 36));
         button.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createRaisedBevelBorder(),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                BorderFactory.createEmptyBorder(5,5,5,5)
         ));
         button.addActionListener(e -> addLetterToInput(text.toLowerCase()));
         return button;
     }
 
     private void addLetterToInput(String letter) {
+        // Fill next empty input box
         for (Component comp : inputPanel.getComponents()) {
             JTextField field = (JTextField) comp;
             if (field.getText().isEmpty()) {
@@ -236,21 +236,40 @@ public class GUIView extends JFrame implements java.util.Observer {
                 break;
             }
         }
-
-        StringBuilder inputWord = new StringBuilder();
+        // Build the current word
+        StringBuilder sb = new StringBuilder();
         for (Component comp : inputPanel.getComponents()) {
-            JTextField field = (JTextField) comp;
-            inputWord.append(field.getText());
+            sb.append(((JTextField) comp).getText());
         }
-
-        if (inputWord.length() == 4) {
-            model.updateCurrentInput(inputWord.toString());
+        if (sb.length() == 4) {
+            String word = sb.toString();
+            // Check dictionary membership first
+            if (!model.isValidWord(word)) {
+                JOptionPane.showMessageDialog(this,
+                        "Word not in dictionary!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                clearInputPanel();
+                return;
+            }
+            // validate one-letter difference
+            List<String> history = model.getHistoryWords();
+            String compareTo = history.isEmpty() ? model.getStartWord() : history.get(history.size() - 1);
+            if (model.countLetterDifferences(word, compareTo) > 1) {
+                JOptionPane.showMessageDialog(this,
+                        "You can only change one letter at a time!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                clearInputPanel();
+                return;
+            }
+            // Valid move: update model and check win
+            model.updateCurrentInput(word);
             if (model.checkWin()) {
-                JOptionPane.showMessageDialog(this, "Congratulations! You Win!", "Victory",
+                JOptionPane.showMessageDialog(this,
+                        "Congratulations! You Win!", "Victory",
                         JOptionPane.INFORMATION_MESSAGE);
             }
             clearInputPanel();
-            model.updateCurrentInput(null);
+            // no extra updateCurrentInput(null)
         }
     }
 
@@ -263,8 +282,8 @@ public class GUIView extends JFrame implements java.util.Observer {
             field.setFont(new Font("Consolas", Font.BOLD, 24));
             field.setBackground(Color.WHITE);
             field.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(150, 150, 150)),
-                    BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                    BorderFactory.createLineBorder(new Color(150,150,150)),
+                    BorderFactory.createEmptyBorder(5,5,5,5)
             ));
             inputPanel.add(field);
         }
@@ -272,118 +291,92 @@ public class GUIView extends JFrame implements java.util.Observer {
         inputPanel.repaint();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void update(java.util.Observable o, Object arg) {
-        if (o instanceof Model && arg != null) {
-            Object[] state = (Object[]) arg;
-            GameState gameState = (GameState) state[0];
-            String startWord = (String) state[1];
-            String targetWord = (String) state[2];
-            List<String> historyWords = (List<String>) state[3];
-            String errorMessage = state.length > 4 ? (String) state[4] : null;
+        if (!(o instanceof Model) || arg == null) return;
+        Object[] state = (Object[]) arg;
+        GameState gameState = (GameState) state[0];
+        String startWord = (String) state[1];
+        String targetWord = (String) state[2];
+        @SuppressWarnings("unchecked")
+        List<String> historyWords = (List<String>) state[3];
+        String errorMessage = state.length > 4 ? (String) state[4] : null;
 
-            if (errorMessage != null) {
-                JOptionPane.showMessageDialog(this, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            startWordLabel.setText("Start Word: " + startWord.toUpperCase());
-            targetWordLabel.setText("Target Word: " + targetWord.toUpperCase());
-
-            gamePanel.removeAll();
-            for (String word : historyWords) {
-                if (word != null) {
-                    addWordToGamePanel(word.toUpperCase(), targetWord.toUpperCase());
-                }
-            }
-
-            if (gameState == GameState.WIN) {
-                JOptionPane.showMessageDialog(this, "Congratulations! You Win!",
-                        "Victory", JOptionPane.INFORMATION_MESSAGE);
-            }
-
-            resetButton.setEnabled(gameState == GameState.IN_PROGRESS);
-            gamePanel.revalidate();
-            gamePanel.repaint();
+        if (errorMessage != null) {
+            JOptionPane.showMessageDialog(this, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+        startWordLabel.setText("Start Word: " + startWord.toUpperCase());
+        targetWordLabel.setText("Target Word: " + targetWord.toUpperCase());
+
+        gamePanel.removeAll();
+        for (String word : historyWords) {
+            if (word != null) addWordToGamePanel(word.toUpperCase(), targetWord.toUpperCase());
+        }
+        if (gameState == GameState.WIN) {
+            // Already shown in addLetterToInput
+        }
+        resetButton.setEnabled(gameState == GameState.IN_PROGRESS);
+        gamePanel.revalidate();
+        gamePanel.repaint();
     }
 
     private void addWordToGamePanel(String word, String targetWord) {
-        JPanel wordPanel = new JPanel(new GridLayout(1, 4, 5, 5));
-        wordPanel.setBackground(new Color(245, 245, 245));
-
-        for (int i = 0; i < 4; i++) {
+        JPanel wordPanel = new JPanel(new GridLayout(1,4,5,5));
+        wordPanel.setBackground(new Color(245,245,245));
+        for (int i=0; i<4; i++) {
             JTextField field = new JTextField();
             field.setEditable(false);
             field.setHorizontalAlignment(JTextField.CENTER);
             field.setFont(new Font("Consolas", Font.BOLD, 24));
-            field.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            field.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
             char c = word.charAt(i);
-            char targetChar = targetWord.charAt(i);
-
+            char t = targetWord.charAt(i);
             if (showErrorsCheckBox.isSelected()) {
-                if (c == targetChar) {
-                    field.setBackground(new Color(144, 238, 144)); // Correct position color
-                } else if (targetWord.indexOf(c) != -1) {
-                    field.setBackground(new Color(255, 255, 153)); // Wrong position color
-                } else {
-                    field.setBackground(new Color(211, 211, 211)); // Letter not in word
-                }
+                if (c==t) field.setBackground(new Color(144,238,144));
+                else if (targetWord.indexOf(c)!=-1) field.setBackground(new Color(255,255,153));
+                else field.setBackground(new Color(211,211,211));
             } else {
-                field.setBackground(Color.WHITE); // White background when not showing errors
+                field.setBackground(Color.WHITE);
             }
-
             field.setText(String.valueOf(c));
             wordPanel.add(field);
         }
-
         gamePanel.add(wordPanel);
     }
 
     private JPanel createCheckboxPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(new Color(30, 30, 36));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        panel.setBackground(new Color(30,30,36));
+        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
-        showErrorsCheckBox = new JCheckBox("Show Errors");
-        showErrorsCheckBox.setSelected(true);
+        showErrorsCheckBox = new JCheckBox("Show Errors", true);
         showErrorsCheckBox.setForeground(Color.WHITE);
-        showErrorsCheckBox.setBackground(new Color(30, 30, 36));
+        showErrorsCheckBox.setBackground(new Color(30,30,36));
         showErrorsCheckBox.addActionListener(e -> {
             showErrorsFlag = showErrorsCheckBox.isSelected();
             model.setShowErrorFlag(showErrorsFlag);
-            update(model, new Object[]{
-                    model.getGameState(),
-                    model.getStartWord(),
-                    model.getTargetWord(),
-                    model.getHistoryWords(),
-                    null
-            });
+            update(model, new Object[]{model.getGameState(), model.getStartWord(), model.getTargetWord(), model.getHistoryWords(), null});
         });
 
-        showSolutionPathCheckBox = new JCheckBox("Show Solution Path");
-        showSolutionPathCheckBox.setSelected(true);
+        showSolutionPathCheckBox = new JCheckBox("Show Solution Path", true);
         showSolutionPathCheckBox.setForeground(Color.WHITE);
-        showSolutionPathCheckBox.setBackground(new Color(30, 30, 36));
+        showSolutionPathCheckBox.setBackground(new Color(30,30,36));
         showSolutionPathCheckBox.addActionListener(e -> {
             showSolutionPathFlag = showSolutionPathCheckBox.isSelected();
             model.setShowPathFlag(showSolutionPathFlag);
             if (showSolutionPathFlag) {
                 List<String> path = model.getSolutionPath();
-                if (path != null) {
-                    JOptionPane.showMessageDialog(this, "Path: " + String.join(" → ", path), "Hint", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, "No valid path found!", "Hint", JOptionPane.INFORMATION_MESSAGE);
-                }
+                JOptionPane.showMessageDialog(this, path != null? String.join(" → ", path): "No valid path found!", "Hint", JOptionPane.INFORMATION_MESSAGE);
             }
         });
 
-        randomGameCheckBox = new JCheckBox("Random Game");
-        randomGameCheckBox.setSelected(false);
+        randomGameCheckBox = new JCheckBox("Random Game", false);
         randomGameCheckBox.setForeground(Color.WHITE);
-        randomGameCheckBox.setBackground(new Color(30, 30, 36));
+        randomGameCheckBox.setBackground(new Color(30,30,36));
         randomGameCheckBox.addActionListener(e -> {
             randomGameFlag = randomGameCheckBox.isSelected();
             newGameButton.setEnabled(randomGameFlag);
@@ -394,11 +387,9 @@ public class GUIView extends JFrame implements java.util.Observer {
         panel.add(randomGameCheckBox);
         return panel;
     }
+
     public static void main(String[] args) {
         Model model = new Model();
-        SwingUtilities.invokeLater(() -> {
-            GUIView view = new GUIView(model);
-            view.setVisible(true);
-        });
+        SwingUtilities.invokeLater(() -> new GUIView(model).setVisible(true));
     }
 }
