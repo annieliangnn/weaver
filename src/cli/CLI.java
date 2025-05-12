@@ -4,19 +4,27 @@ import model.Model;
 
 import java.util.List;
 import java.util.Scanner;
-
+/**
+ * CLI provides a console-based interface for playing the Weaver word game.
+ * It supports commands for guessing words, resetting input, and starting new rounds.
+ */
 public class CLI {
     private Model model;
     private boolean showErrorsFlag = true;
     private boolean showSolutionPathFlag = true;
     private boolean randomGameFlag = true;
+    /**
+     * Constructor injects a shared Model instance and initializes display flags.
+     */
     public CLI(Model model) {
         this.model   = model;
         model.setShowErrorFlag(showErrorsFlag);
         model.setShowPathFlag(showSolutionPathFlag);
         model.setRandomWordFlag(randomGameFlag);
     }
-
+    /**
+     * Starts the main game loop: loads dictionary, then repeats rounds until exit.
+     */
     public void start() {
         System.out.println("Welcome to Weaver (CLI)!");
         model.loadDictionary();
@@ -110,13 +118,13 @@ public class CLI {
 
                 if (input.equalsIgnoreCase(model.getTargetWord())) {
                     System.out.println("You win!");
-                    // 询问是否进行新一轮游戏
+                    // Ask whether a new round of the game will be carried out
                     System.out.print("Start a new game? (y/n): ");
                     String yn = scanner.nextLine().trim().toLowerCase();
                     if (yn.equals("y")) {
-                        roundOver = true; // 跳出当前回合，进入下一轮
+                        roundOver = true; // Exit the current round and move on to the next round
                     } else {
-                        running = false; // 结束外层循环，退出程序
+                        running = false; // End the outer loop and exit the program
                         roundOver = true;
                     }
                 }

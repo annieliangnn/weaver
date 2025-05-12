@@ -8,25 +8,32 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.List;
-
+/**
+ * GUIView renders the Weaver game using Swing.
+ * It observes the Model for updates and provides both
+ * on-screen and physical keyboard input.
+ */
 public class GUIView extends JFrame implements java.util.Observer {
     private final Model model;
-
+    // Control buttons
     private final JButton resetButton;
     private final JButton newGameButton;
+    // Panels for game history, input fields, and on-screen keyboard
     private final JPanel gamePanel;
     private final JPanel inputPanel;
     private final JPanel keyboardPanel;
     private final JLabel startWordLabel;
     private final JLabel targetWordLabel;
-
+    // Side toggles (previously checkboxes)
     private final JCheckBox showErrorsCheckBox;
     private final JCheckBox showSolutionPathCheckBox;
     private final JCheckBox randomGameCheckBox;
     private boolean showErrorsFlag = true;
     private boolean showSolutionPathFlag = true;
     private boolean randomGameFlag = false;
-
+    /**
+     * Constructs the GUI, sets up panels, buttons, and key bindings.
+     */
     public GUIView(Model model) {
         this.model = model;
         model.addObserver(this);
@@ -36,7 +43,7 @@ public class GUIView extends JFrame implements java.util.Observer {
         getContentPane().setBackground(Color.WHITE);
         setLayout(new BorderLayout(10, 10));
 
-        // Top info panel
+        // Top info panel: shows start and target words
         JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         infoPanel.setBackground(new Color(30, 30, 36));
         startWordLabel  = new JLabel("Start Word: ");
@@ -50,7 +57,7 @@ public class GUIView extends JFrame implements java.util.Observer {
         infoPanel.add(targetWordLabel);
         add(infoPanel, BorderLayout.NORTH);
 
-        // Center history panel
+        // Center panel: scrollable game history
         gamePanel = new JPanel();
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.Y_AXIS));
         gamePanel.setBackground(new Color(245, 245, 245));
@@ -60,7 +67,7 @@ public class GUIView extends JFrame implements java.util.Observer {
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Bottom panel: buttons, input, keyboard
+        //  Bottom panel: reset/new buttons, input fields, on-screen keyboard
         JPanel south = new JPanel(new BorderLayout(10, 10));
         south.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         south.setBackground(new Color(200, 200, 200));
@@ -70,11 +77,13 @@ public class GUIView extends JFrame implements java.util.Observer {
         btnPanel.setBackground(new Color(64, 64, 64));
         resetButton   = new JButton("Reset");
         newGameButton = new JButton("New Game");
-        newGameButton.setEnabled(false);
+        newGameButton.setEnabled(false); // disabled until Random Game toggled on
+        // Reset removes last guess and clears input fields
         resetButton.addActionListener(e -> {
             model.removeLastInput();
             clearInputPanel();
         });
+        // New Game starts fresh with random vs fixed based on flag
         newGameButton.addActionListener(e -> {
             model.setRandomWordFlag(randomGameFlag);
             model.setStartAndTargetWords(null, null);
@@ -157,7 +166,9 @@ public class GUIView extends JFrame implements java.util.Observer {
         pack();
         setLocationRelativeTo(null);
     }
-
+    /**
+     * Builds the on-screen keyboard rows plus a DEL key.
+     */
     private JPanel buildKeyboardPanel() {
         JPanel p = new JPanel();
         p.setBackground(new Color(30, 30, 36));
@@ -194,7 +205,10 @@ public class GUIView extends JFrame implements java.util.Observer {
         p.add(delRow);
         return p;
     }
-
+    /**
+     * Inserts one letter into the next empty input box, then when 4 letters
+     * are present it validates the word and updates the model.
+     */
     private void addLetterToInput(String letter) {
         for (Component c : inputPanel.getComponents()) {
             JTextField f = (JTextField)c;
@@ -204,11 +218,13 @@ public class GUIView extends JFrame implements java.util.Observer {
         for (Component c : inputPanel.getComponents()) sb.append(((JTextField)c).getText());
         if (sb.length() == 4) {
             String w = sb.toString();
+            // dictionary check
             if (!model.isValidWord(w)) {
                 JOptionPane.showMessageDialog(this, "Word not in dictionary!", "Error", JOptionPane.ERROR_MESSAGE);
                 clearInputPanel();
                 return;
             }
+            // one-letter difference check
             List<String> hist = model.getHistoryWords();
             String prev = hist.isEmpty() ? model.getStartWord() : hist.get(hist.size() - 1);
             if (model.countLetterDifferences(w, prev) > 1) {
@@ -216,6 +232,7 @@ public class GUIView extends JFrame implements java.util.Observer {
                 clearInputPanel();
                 return;
             }
+            // valid guess
             model.updateCurrentInput(w);
             if (model.checkWin()) {
                 JOptionPane.showMessageDialog(this, "Congratulations! You Win!", "Victory", JOptionPane.INFORMATION_MESSAGE);
@@ -223,7 +240,9 @@ public class GUIView extends JFrame implements java.util.Observer {
             clearInputPanel();
         }
     }
-
+    /**
+     * Clears the 4 input textfields for the next guess.
+     */
     private void clearInputPanel() {
         inputPanel.removeAll();
         for (int i = 0; i < 4; i++) {
@@ -236,7 +255,9 @@ public class GUIView extends JFrame implements java.util.Observer {
         inputPanel.revalidate();
         inputPanel.repaint();
     }
-
+    /**
+     * Observes Model changes and repaints the history rows.
+     */
     @SuppressWarnings("unchecked")
     @Override
     public void update(java.util.Observable o, Object arg) {
@@ -271,7 +292,9 @@ public class GUIView extends JFrame implements java.util.Observer {
         gamePanel.revalidate();
         gamePanel.repaint();
     }
-
+    /**
+     * Refreshes the history panel according to current model state.
+     */
     private void refreshHistory() {
         update(model, new Object[]{
                 model.getGameState(),
@@ -300,7 +323,7 @@ public class GUIView extends JFrame implements java.util.Observer {
             });
         }
 
-        // ENTER
+        // ENTER key submits if 4 letters entered
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submit");
         am.put("submit", new AbstractAction() {
             @Override
@@ -316,7 +339,7 @@ public class GUIView extends JFrame implements java.util.Observer {
             }
         });
 
-        // BACKSPACE
+        // BACKSPACE  key deletes last letter
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "delete");
         am.put("delete", new AbstractAction() {
             @Override
