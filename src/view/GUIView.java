@@ -24,6 +24,7 @@ public class GUIView extends JFrame implements java.util.Observer {
     private boolean showSolutionPathFlag = true;
     private boolean randomGameFlag = false;
 
+
     public GUIView(Model model) {
         this.model = model;
         model.addObserver(this);
@@ -97,9 +98,10 @@ public class GUIView extends JFrame implements java.util.Observer {
         return panel;
     }
 
+
     private JPanel createSouthPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panel.setBackground(new Color(200, 200, 200));
 
         // Button panel
@@ -118,6 +120,7 @@ public class GUIView extends JFrame implements java.util.Observer {
         panel.add(keyboardPanel, BorderLayout.SOUTH);
         return panel;
     }
+
 
     private JPanel createButtonPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
