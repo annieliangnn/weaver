@@ -66,6 +66,7 @@ public class ModelTest {
       requires startWord.equals("care") && targetWord.equals("tank");
       ensures \result.equals(Arrays.asList("care","cane","bane","bank","tank"));
       */
+
     @Test
     public void testSolutionPathFound() {
         // Build a minimal dictionary for path test

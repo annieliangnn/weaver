@@ -236,6 +236,7 @@ public class Model extends Observable {
     /**
      * Helper: returns all dictionary words differing by one letter.
      */
+
     private List<String> getOneLetterDiffWords(String word, Set<String> dictSet) {
         List<String> result = new ArrayList<>();
         char[] arr = word.toCharArray();
