@@ -108,14 +108,14 @@ public class Model extends Observable {
             // Check dictionary membership
             if (!isValidWord(input)) {
                 setChanged();
-                notifyObservers(new Object[]{gameState, startWord, targetWord, historyWords, "单词不符合要求"});
+                notifyObservers(new Object[]{gameState, startWord, targetWord, historyWords, "Invalid Word"});
                 return;
             }
             // Check if it is the first input
             if (historyWords.isEmpty()) {
                 if (countLetterDifferences(input, startWord) > 1) {
                     setChanged();
-                    notifyObservers(new Object[]{gameState, startWord, targetWord, historyWords, "一次只能改变一个字母！"});
+                    notifyObservers(new Object[]{gameState, startWord, targetWord, historyWords, "Only one letter can be changed at a time！"});
                     return;
                 }
             } else {
@@ -123,7 +123,7 @@ public class Model extends Observable {
                 String lastWord = historyWords.get(historyWords.size() - 1);
                 if (lastWord != null && countLetterDifferences(input, lastWord) > 1) {
                     setChanged();
-                    notifyObservers(new Object[]{gameState, startWord, targetWord, historyWords, "一次只能改变一个字母！"});
+                    notifyObservers(new Object[]{gameState, startWord, targetWord, historyWords, "Only one letter can be changed at a time！"});
                     return;
                 }
             }
