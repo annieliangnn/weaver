@@ -143,6 +143,7 @@ public class GUIView extends JFrame implements java.util.Observer {
             }
         });
 
+
         randomGameCheckBox.addActionListener(e -> {
             randomGameFlag = randomGameCheckBox.isSelected();
             newGameButton.setEnabled(randomGameFlag);
